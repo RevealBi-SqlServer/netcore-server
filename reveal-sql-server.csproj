@@ -20,4 +20,25 @@
     <Folder Include="MyDashboards\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Dashboards\Healthcare.rdash">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dashboards\Logistics.rdash">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dashboards\Market Rents.rdash">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dashboards\Marketing.rdash">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dashboards\Sales.rdash">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="Dashboards\Telecomm.rdash">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
