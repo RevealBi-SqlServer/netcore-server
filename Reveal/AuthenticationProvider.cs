@@ -16,6 +16,19 @@ namespace RevealSdk.Server.Reveal
     // ****
     public class AuthenticationProvider : IRVAuthenticationProvider
     {
+        // ***
+        // For AppSettings / Secrets retrieval
+        // https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-8.0&tabs=windows
+        // ***
+        private readonly IConfiguration _config;
+
+        // Constructor that accepts IConfiguration as a dependency
+        public AuthenticationProvider(IConfiguration config)
+        {
+            _config = config ?? throw new ArgumentNullException(nameof(config));
+        }
+        // ***
+
         public Task<IRVDataSourceCredential> ResolveCredentialsAsync(IRVUserContext userContext,
             RVDashboardDataSource dataSource)
         {
@@ -30,7 +43,7 @@ namespace RevealSdk.Server.Reveal
                 // for SQL Server, add a username, password and optional domain
                 // note these are just properties, you can set them from configuration, a key vault, a look up to 
                 // database, etc.  They are hardcoded here for demo purposes.
-                userCredential = new RVUsernamePasswordDataSourceCredential("username", "password");
+                userCredential = new RVUsernamePasswordDataSourceCredential(_config["SqlServer:Username"], _config["SqlServer:Password"]);
             }
             return Task.FromResult(userCredential);
         }

@@ -19,6 +19,21 @@ namespace RevealSdk.Server.Reveal
     // ****
     internal class DataSourceProvider : IRVDataSourceProvider
     {
+
+        // ***
+        // For AppSettings / Secrets retrieval
+        // https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-8.0&tabs=windows
+        // ***
+        private readonly IConfiguration _config;
+
+        // Constructor that accepts IConfiguration as a dependency
+        public DataSourceProvider(IConfiguration config)
+        {
+            _config = config ?? throw new ArgumentNullException(nameof(config));
+        }
+        // ***
+
+
         public Task<RVDataSourceItem>? ChangeDataSourceItemAsync(IRVUserContext userContext, 
                 string dashboardId, RVDataSourceItem dataSourceItem)
         {
@@ -90,11 +105,10 @@ namespace RevealSdk.Server.Reveal
             // you can also check the incoming dataSource type or id to set connection properties
             // *****
 
-            if (dataSource is RVSqlServerDataSource sqlServerDataSourceItem)
+            if (dataSource is RVSqlServerDataSource SqlDs   )
             {
-
-                sqlServerDataSourceItem.Host = "serverName";
-                sqlServerDataSourceItem.Database = "databaseName";
+                SqlDs.Host = _config["SqlServer:Host"];
+                SqlDs.Database = _config["SqlServer:Database"];
             }
             return Task.FromResult(dataSource);
         }

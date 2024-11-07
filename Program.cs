@@ -51,6 +51,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// ****
+// Optional endpoint to get the thumbnail of a dashboard
+// ****
 app.MapGet("/dashboards/{name}/thumbnail", async (string name) =>
 {
     var path = "dashboards/" + name + ".rdash";
@@ -66,6 +69,9 @@ app.MapGet("/dashboards/{name}/thumbnail", async (string name) =>
     }
 });
 
+// ****
+// Optional endpoint to get the list of dashboard names
+// ****
 app.MapGet("/dashboards/names", () =>
 {
     try

@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>RevealSdk_Net7</RootNamespace>
     <Platforms>AnyCPU;x64</Platforms>
+    <UserSecretsId>b6154fe7-6ef2-4b0a-b369-9dd622fd8293</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
