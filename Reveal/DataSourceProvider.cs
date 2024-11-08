@@ -136,16 +136,16 @@ namespace RevealSdk.Server.Reveal
 
         private static readonly string[] AllowedKeywords = new[]
         {
-        "SELECT", "WHERE", "JOIN", "ORDER BY", "GROUP BY", "HAVING",
-        "LIMIT", "OFFSET", "FETCH", "DISTINCT", "IN", "LIKE", "BETWEEN"
+            "SELECT", "WHERE", "JOIN", "ORDER", "BY", "GROUP", "HAVING",
+            "LIMIT", "OFFSET", "FETCH", "DISTINCT", "IN", "LIKE", "BETWEEN"
         };
 
         private static bool IsValidSql(string query)
         {
-            var words = query.Split(new[] { ' ', '\t', '\n', '\r', ',', ';', '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
+            var words = query.Split(new[] { ' ', '\t', '\n', '\r', ',', ';', '(', ')', '*' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var word in words)
             {
-                if (!AllowedKeywords.Contains(word.ToUpper()) && !IsSqlIdentifier(word))
+                if (!AllowedKeywords.Contains(word.ToUpper()) && !IsSqlIdentifier(word) && !IsSqlOperator(word) && !IsSqlLiteral(word))
                 {
                     return false;
                 }
@@ -155,7 +155,22 @@ namespace RevealSdk.Server.Reveal
 
         private static bool IsSqlIdentifier(string word)
         {
+            // Add logic to determine if a word is a valid SQL identifier (e.g., table name, column name)
+            // For simplicity, we assume that valid identifiers are alphanumeric and start with a letter
             return Regex.IsMatch(word, @"^[A-Za-z][A-Za-z0-9_]*$");
+        }
+
+        private static bool IsSqlOperator(string word)
+        {
+            // Add common SQL operators that are allowed
+            var operators = new[] { "=", "<", ">", "<=", ">=", "<>", "!=", "AND", "OR", "NOT", "LIKE" };
+            return operators.Contains(word.ToUpper());
+        }
+
+        private static bool IsSqlLiteral(string word)
+        {
+            // Check if the word is a numeric literal
+            return int.TryParse(word, out _);
         }
 
     }
