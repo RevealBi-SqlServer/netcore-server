@@ -114,7 +114,9 @@ app.UseAuthorization();
 app.MapControllers();
 app.Run();
 
-
+// ***
+// This is a helper class to store the dashboard names
+// ***
 public class DashboardNames
 {
     public string? DashboardFileName { get; set; }

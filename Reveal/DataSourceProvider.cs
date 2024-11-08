@@ -1,6 +1,7 @@
 ﻿using Reveal.Sdk;
 using Reveal.Sdk.Data;
 using Reveal.Sdk.Data.Microsoft.SqlServer;
+using System.Text.RegularExpressions;
 
 namespace RevealSdk.Server.Reveal
 {
@@ -34,68 +35,6 @@ namespace RevealSdk.Server.Reveal
         // ***
 
 
-        public Task<RVDataSourceItem>? ChangeDataSourceItemAsync(IRVUserContext userContext, 
-                string dashboardId, RVDataSourceItem dataSourceItem)
-        {
-
-            // ****
-            // Every request for data passes thru changeDataSourceItem
-            // You can set query properties based on the incoming requests
-            // ****
-
-            if (dataSourceItem is RVSqlServerDataSourceItem sqlDsi)
-            {
-                // Ensure data source is updated
-                ChangeDataSourceAsync(userContext, sqlDsi.DataSource);
-
-
-                // *****
-                // Example of how to use a stored procedure with a paramter
-                // *****
-                if (sqlDsi.Id == "CustOrderHist")
-                {
-                    sqlDsi.Procedure = "CustOrderHist";
-                    sqlDsi.ProcedureParameters = new Dictionary<string, object> { { "@CustomerID", userContext.UserId } };
-                }
-
-                // *****
-                // Example of how to use a stored procedure with a parameter
-                // *****
-                else if (sqlDsi.Id == "CustOrdersOrders")
-                {
-                    sqlDsi.Procedure = "CustOrdersOrders";
-                    sqlDsi.ProcedureParameters = new Dictionary<string, object> { { "@CustomerID", userContext.UserId } };
-                }
-
-                // *****
-                // Example of how to use a stored procedure with no parameter
-                // *****
-                else if (sqlDsi.Id == "TenMostExpensiveProducts")
-                {
-                    sqlDsi.Procedure = "Ten Most Expensive Products";
-                }
-
-                // *****
-                // Example of how to use an ad-hoc query with a parameter
-                // *****
-                else if (sqlDsi.Id == "CustomerOrders")
-                {
-                    sqlDsi.CustomQuery = "Select * from Orders Where OrderId = " + userContext.Properties["OrderId"];
-                }
-
-                // *****
-                // Example of how check a request for a table / view and add a paramterized query
-                // *****
-                else if (sqlDsi.Table == "OrdersQry")
-                {
-                    sqlDsi.CustomQuery = "Select * from OrdersQry where customerId = '" + userContext.UserId + "'";
-                }
-
-                //else return null;
-            }
-            return Task.FromResult(dataSourceItem);
-        }
-
         public Task<RVDashboardDataSource> ChangeDataSourceAsync(IRVUserContext userContext, RVDashboardDataSource dataSource)
         {
             // *****
@@ -105,12 +44,119 @@ namespace RevealSdk.Server.Reveal
             // you can also check the incoming dataSource type or id to set connection properties
             // *****
 
-            if (dataSource is RVSqlServerDataSource SqlDs   )
+            if (dataSource is RVSqlServerDataSource SqlDs)
             {
                 SqlDs.Host = _config["SqlServer:Host"];
                 SqlDs.Database = _config["SqlServer:Database"];
             }
             return Task.FromResult(dataSource);
         }
+
+        public Task<RVDataSourceItem>? ChangeDataSourceItemAsync(IRVUserContext userContext, string dashboardId, RVDataSourceItem dataSourceItem)
+        {
+            // ****
+            // Every request for data passes thru changeDataSourceItem
+            // You can set query properties based on the incoming requests
+            // ****
+
+            if (dataSourceItem is not RVSqlServerDataSourceItem sqlDsi) return Task.FromResult(dataSourceItem);
+
+            // Ensure data source is updated
+            ChangeDataSourceAsync(userContext, sqlDsi.DataSource);
+
+            string customerId = userContext.UserId;
+
+            switch (sqlDsi.Id)
+            {
+                // *****
+                // Example of how to use a stored procedure with a parameter
+                // *****
+                case "CustOrderHist":
+                case "CustOrdersOrders":
+                    if (!IsValidCustomerId(customerId))
+                        throw new ArgumentException("Invalid CustomerID format. CustomerID must be a 5-character alphanumeric string.");
+                    sqlDsi.Procedure = sqlDsi.Id;
+                    sqlDsi.ProcedureParameters = new Dictionary<string, object> { { "@CustomerID", customerId } };
+                    break;
+
+                // *****
+                // Example of how to use a stored procedure 
+                // *****
+                case "TenMostExpensiveProducts":
+                    sqlDsi.Procedure = "Ten Most Expensive Products";
+                    break;
+
+                // *****
+                // Example of an ad-hoc-query
+                // *****
+                case "CustomerOrders":
+                    string orderId = userContext.Properties["OrderId"]?.ToString();
+                    if (!IsValidOrderId(orderId))
+                        throw new ArgumentException("Invalid OrderId format. OrderId must be a 5-digit numeric value.");
+                    
+                    string customQuery = $"SELECT * FROM Orders WHERE OrderId = {orderId}";
+                    if (!IsValidSql(customQuery))
+                        throw new ArgumentException("Invalid SQL query.");
+                    sqlDsi.CustomQuery = customQuery;
+                    break;
+
+                case var table when table == "OrdersQry":
+                    if (!IsValidCustomerId(customerId))
+                        throw new ArgumentException("Invalid CustomerID format. CustomerID must be a 5-character alphanumeric string.");
+                    
+                    string query = $"SELECT * FROM OrdersQry WHERE customerId = '{customerId}'";
+                    if (!IsValidSql(query))
+                        throw new ArgumentException("Invalid SQL query.");
+
+                    sqlDsi.CustomQuery = query;
+                    break;
+
+
+                default:
+                    // ****
+                    // If you do not want to allow any other tables,throw an exception
+                    // ****
+                    //throw new ArgumentException("Invalid Table");
+                    //return null;
+                    break;
+            }
+
+            return Task.FromResult(dataSourceItem);
+        }
+
+        // ****
+        // Modify any of the code below to meet your specific needs
+        // The code below is not part of the Reveal SDK, these are helpers to clean / validate parameters
+        // specific to this sample code.  For example, ensuring the customerId & orderId are well formed, 
+        // and ensuring that no invalid / illegal statements are passed in the header to the custom query
+        // ****
+
+        private static bool IsValidCustomerId(string customerId) => Regex.IsMatch(customerId, @"^[A-Za-z0-9]{5}$");
+        private static bool IsValidOrderId(string orderId) => Regex.IsMatch(orderId, @"^\d{5}$");
+
+        private static readonly string[] AllowedKeywords = new[]
+        {
+        "SELECT", "WHERE", "JOIN", "ORDER BY", "GROUP BY", "HAVING",
+        "LIMIT", "OFFSET", "FETCH", "DISTINCT", "IN", "LIKE", "BETWEEN"
+        };
+
+        private static bool IsValidSql(string query)
+        {
+            var words = query.Split(new[] { ' ', '\t', '\n', '\r', ',', ';', '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var word in words)
+            {
+                if (!AllowedKeywords.Contains(word.ToUpper()) && !IsSqlIdentifier(word))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private static bool IsSqlIdentifier(string word)
+        {
+            return Regex.IsMatch(word, @"^[A-Za-z][A-Za-z0-9_]*$");
+        }
+
     }
 }

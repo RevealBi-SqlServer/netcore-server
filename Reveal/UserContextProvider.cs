@@ -25,11 +25,12 @@ namespace RevealSdk.Server.Reveal
             // ****
             // In this case, there are 3 headers sent in clear text to the server
             // Normally, you'd be accepting your token or other secrets that you'd use 
-            // for the security context of your data requests
+            // for the security context of your data requests,
+            // or you would be passing query parameters for custom queries, etc.
             // ****
-            var userId = aspnetContext.Request.Headers["x-header-customerId"];
-            var orderId = aspnetContext.Request.Headers["x-header-orderId"];
-            var employeeId = aspnetContext.Request.Headers["x-header-employeeId"];
+
+            var userId = aspnetContext.Request.Headers["x-header-one"];
+            var orderId = aspnetContext.Request.Headers["x-header-two"];
 
             // ****
             // Set up Roles based on the incoming user id.  In a real app, this would be set up to match
@@ -46,10 +47,9 @@ namespace RevealSdk.Server.Reveal
             // ****
             var props = new Dictionary<string, object>() {
                     { "OrderId", orderId },
-                    { "EmployeeId", employeeId },
                     { "Role", role } };
 
-            Console.WriteLine("UserContextProvider: " + userId + " " + orderId + " " + employeeId);
+            Console.WriteLine("UserContextProvider: " + userId + " " + orderId);
 
             return new RVUserContext(userId, props);
         }

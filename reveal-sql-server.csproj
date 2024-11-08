@@ -10,10 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Reveal.Sdk.AspNetCore" Version="1.7.0" />
-    <PackageReference Include="Reveal.Sdk.Data.Microsoft.SqlServer" Version="1.7.0" />
+    <PackageReference Include="Reveal.Sdk.AspNetCore" Version="1.7.1" />
+    <PackageReference Include="Reveal.Sdk.Data.Microsoft.SqlServer" Version="1.7.1" />
     <PackageReference Include="Reveal.Sdk.Dom" Version="0.1.198-beta" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.8.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.9.0" />
   </ItemGroup>
 
   <ItemGroup>
