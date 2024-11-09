@@ -36,7 +36,7 @@ namespace RevealSdk.Server.Reveal
             // use the Filter on the dataSource to validate only the database you expect is being accessed
             // is actually being accessed
             // ****
-            var allowedList = new List<string>() { _config["SqlServer:Database"] }; //here we indicate a list of databases with which we want to work
+            var allowedList = new List<string>() { _config["""SqlServer:Database"""] }; //here we indicate a list of databases with which we want to work
 
             if (dataSource != null)
             {
@@ -47,7 +47,6 @@ namespace RevealSdk.Server.Reveal
             }
             return Task.FromResult(false);
         }
-
 
         public Task<bool> Filter(IRVUserContext userContext, RVDataSourceItem dataSourceItem)
         {
@@ -62,6 +61,9 @@ namespace RevealSdk.Server.Reveal
                 if (userContext.Properties.TryGetValue("Role", out var roleObj) &&
                     roleObj?.ToString()?.ToLower() == "user")
                 {
+                    // ****
+                    // Hardcoding these, however, you can pull these in from JSON, configuration or a database
+                    // ****
                     var allowedItems = new HashSet<string> { "All Orders", "All Invoices"};
 
                     if ((dataSQLItem.Table != null && !allowedItems.Contains(dataSQLItem.Table)) ||
@@ -73,6 +75,5 @@ namespace RevealSdk.Server.Reveal
             }
             return Task.FromResult(true);
         }
-
     }
 }
