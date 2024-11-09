@@ -1,4 +1,5 @@
 ﻿using Reveal.Sdk;
+using System.Text.RegularExpressions;
 
 namespace RevealSdk.Server.Reveal
 {
@@ -32,6 +33,10 @@ namespace RevealSdk.Server.Reveal
             var userId = aspnetContext.Request.Headers["x-header-one"];
             var orderId = aspnetContext.Request.Headers["x-header-two"];
 
+            if (!IsValidCustomerId(userId))
+                throw new ArgumentException("Invalid CustomerID format. CustomerID must be a 5-character alphanumeric string.");
+
+
             // ****
             // Set up Roles based on the incoming user id.  In a real app, this would be set up to match
             // your scenario and be dynamically loaded
@@ -53,5 +58,7 @@ namespace RevealSdk.Server.Reveal
 
             return new RVUserContext(userId, props);
         }
+
+        private static bool IsValidCustomerId(string customerId) => Regex.IsMatch(customerId, @"^[A-Za-z0-9]{5}$");
     }
 }

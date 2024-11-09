@@ -62,7 +62,7 @@ namespace RevealSdk.Server.Reveal
                 if (userContext.Properties.TryGetValue("Role", out var roleObj) &&
                     roleObj?.ToString()?.ToLower() == "user")
                 {
-                    var allowedItems = new HashSet<string> { "All Orders", "All Invoices" };
+                    var allowedItems = new HashSet<string> { "All Orders", "All Invoices"};
 
                     if ((dataSQLItem.Table != null && !allowedItems.Contains(dataSQLItem.Table)) ||
                         (dataSQLItem.Procedure != null && !allowedItems.Contains(dataSQLItem.Procedure)))

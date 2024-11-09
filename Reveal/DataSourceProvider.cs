@@ -65,6 +65,13 @@ namespace RevealSdk.Server.Reveal
             ChangeDataSourceAsync(userContext, sqlDsi.DataSource);
 
             string customerId = userContext.UserId;
+            string orderId = userContext.Properties["OrderId"]?.ToString();
+            bool isAdmin = userContext.Properties["Role"]?.ToString() == "Admin";
+
+            var allowedTables = TableInfo.GetAllowedTables()
+                             .Where(t => string.Equals(t.COLUMN_NAME, "CustomerID", StringComparison.OrdinalIgnoreCase))
+                             .Select(t => t.TABLE_NAME)
+                             .ToList();
 
             switch (sqlDsi.Id)
             {
@@ -90,27 +97,38 @@ namespace RevealSdk.Server.Reveal
                 // Example of an ad-hoc-query
                 // *****
                 case "CustomerOrders":
-                    string orderId = userContext.Properties["OrderId"]?.ToString();
                     if (!IsValidOrderId(orderId))
                         throw new ArgumentException("Invalid OrderId format. OrderId must be a 5-digit numeric value.");
-                    
-                    string customQuery = $"SELECT * FROM Orders WHERE OrderId = {orderId}";
-                    if (!IsValidSql(customQuery))
+
+                    orderId = EscapeSqlInput(orderId);
+                    string customQuery = $"SELECT * FROM Orders WHERE OrderId = '{orderId}'";
+                    if (!IsSelectOnly(customQuery)) 
                         throw new ArgumentException("Invalid SQL query.");
                     sqlDsi.CustomQuery = customQuery;
+
                     break;
 
-                case var table when table == "OrdersQry":
+                    // *****
+                    // Example pulling in the list of allowed tables that have the customerId column name
+                    // this ensures that _any_ time a request is made for customer specific data in allowed tables
+                    // the customerId parameter is passed
+                    // note that the Admin role is not restricted to a custom query, the Admin role will see all 
+                    // customer data with no restriction
+                    // the tables being checked are in the allowedtables.json
+                    // *****
+                 case var table when allowedTables.Contains(sqlDsi.Table):
+                    if (isAdmin)
+                        break;
                     if (!IsValidCustomerId(customerId))
                         throw new ArgumentException("Invalid CustomerID format. CustomerID must be a 5-character alphanumeric string.");
-                    
-                    string query = $"SELECT * FROM OrdersQry WHERE customerId = '{customerId}'";
-                    if (!IsValidSql(query))
+
+                    customerId = EscapeSqlInput(customerId);
+                    string query = $"SELECT * FROM [{sqlDsi.Table}] WHERE customerId = '{customerId}'";
+                    if (!IsSelectOnly(query))
                         throw new ArgumentException("Invalid SQL query.");
 
                     sqlDsi.CustomQuery = query;
                     break;
-
 
                 default:
                     // ****
@@ -133,45 +151,13 @@ namespace RevealSdk.Server.Reveal
 
         private static bool IsValidCustomerId(string customerId) => Regex.IsMatch(customerId, @"^[A-Za-z0-9]{5}$");
         private static bool IsValidOrderId(string orderId) => Regex.IsMatch(orderId, @"^\d{5}$");
+        private string EscapeSqlInput(string input) => input.Replace("'", "''");
 
-        private static readonly string[] AllowedKeywords = new[]
+        public bool IsSelectOnly(string sql)
         {
-            "SELECT", "WHERE", "JOIN", "ORDER", "BY", "GROUP", "HAVING",
-            "LIMIT", "OFFSET", "FETCH", "DISTINCT", "IN", "LIKE", "BETWEEN"
-        };
-
-        private static bool IsValidSql(string query)
-        {
-            var words = query.Split(new[] { ' ', '\t', '\n', '\r', ',', ';', '(', ')', '*' }, StringSplitOptions.RemoveEmptyEntries);
-            foreach (var word in words)
-            {
-                if (!AllowedKeywords.Contains(word.ToUpper()) && !IsSqlIdentifier(word) && !IsSqlOperator(word) && !IsSqlLiteral(word))
-                {
-                    return false;
-                }
-            }
-            return true;
+            // Quick regex to detect statements that aren't allowed
+            return Regex.IsMatch(sql.Trim(), @"^\s*SELECT\s+", RegexOptions.IgnoreCase) &&
+                   !Regex.IsMatch(sql, @"\b(INSERT|DELETE|UPDATE|DROP|ALTER|EXEC|MERGE|TRUNCATE|GRANT|REVOKE)\b", RegexOptions.IgnoreCase);
         }
-
-        private static bool IsSqlIdentifier(string word)
-        {
-            // Add logic to determine if a word is a valid SQL identifier (e.g., table name, column name)
-            // For simplicity, we assume that valid identifiers are alphanumeric and start with a letter
-            return Regex.IsMatch(word, @"^[A-Za-z][A-Za-z0-9_]*$");
-        }
-
-        private static bool IsSqlOperator(string word)
-        {
-            // Add common SQL operators that are allowed
-            var operators = new[] { "=", "<", ">", "<=", ">=", "<>", "!=", "AND", "OR", "NOT", "LIKE" };
-            return operators.Contains(word.ToUpper());
-        }
-
-        private static bool IsSqlLiteral(string word)
-        {
-            // Check if the word is a numeric literal
-            return int.TryParse(word, out _);
-        }
-
     }
 }
