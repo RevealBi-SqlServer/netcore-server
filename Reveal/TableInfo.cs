@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
@@ -16,4 +17,5 @@ namespace RevealSdk.Server.Reveal
             return JsonSerializer.Deserialize<List<TableInfo>>(json);
         }
     }
+
 }

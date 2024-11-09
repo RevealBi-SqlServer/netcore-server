@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.SqlServer.TransactSql.ScriptDom" Version="161.9142.1" />
     <PackageReference Include="Reveal.Sdk.AspNetCore" Version="1.7.1" />
     <PackageReference Include="Reveal.Sdk.Data.Microsoft.SqlServer" Version="1.7.1" />
     <PackageReference Include="Reveal.Sdk.Dom" Version="0.1.198-beta" />

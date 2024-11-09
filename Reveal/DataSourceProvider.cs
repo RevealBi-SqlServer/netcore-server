@@ -1,4 +1,5 @@
-﻿using Reveal.Sdk;
+﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+using Reveal.Sdk;
 using Reveal.Sdk.Data;
 using Reveal.Sdk.Data.Microsoft.SqlServer;
 using System.Text.RegularExpressions;
@@ -119,6 +120,7 @@ namespace RevealSdk.Server.Reveal
                  case var table when allowedTables.Contains(sqlDsi.Table):
                     if (isAdmin)
                         break;
+
                     if (!IsValidCustomerId(customerId))
                         throw new ArgumentException("Invalid CustomerID format. CustomerID must be a 5-character alphanumeric string.");
 
@@ -155,9 +157,27 @@ namespace RevealSdk.Server.Reveal
 
         public bool IsSelectOnly(string sql)
         {
-            // Quick regex to detect statements that aren't allowed
-            return Regex.IsMatch(sql.Trim(), @"^\s*SELECT\s+", RegexOptions.IgnoreCase) &&
-                   !Regex.IsMatch(sql, @"\b(INSERT|DELETE|UPDATE|DROP|ALTER|EXEC|MERGE|TRUNCATE|GRANT|REVOKE)\b", RegexOptions.IgnoreCase);
+            TSql150Parser parser = new TSql150Parser(true);
+            IList<ParseError> errors;
+            TSqlFragment fragment;
+
+            using (TextReader reader = new StringReader(sql))
+            {
+                fragment = parser.Parse(reader, out errors);
+            }
+
+            if (errors.Count > 0)
+            {
+                foreach (var error in errors)
+                {
+                    Console.WriteLine($"Error: {error.Message}");
+                }
+                return false;
+            }
+
+            var visitor = new ReadOnlySelectVisitor();
+            fragment.Accept(visitor);
+            return visitor.IsReadOnly;
         }
     }
 }
