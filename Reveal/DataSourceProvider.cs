@@ -118,7 +118,7 @@ namespace RevealSdk.Server.Reveal
                     // the tables being checked are in the allowedtables.json
                     // *****
                  case var table when allowedTables.Contains(sqlDsi.Table):
-                    if (isAdmin)
+                    if (isAdmin && dashboardId != "Customer Orders")
                         break;
 
                     if (!IsValidCustomerId(customerId))
