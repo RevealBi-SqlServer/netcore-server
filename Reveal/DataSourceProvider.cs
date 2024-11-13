@@ -1,4 +1,58 @@
-﻿using Microsoft.SqlServer.TransactSql.ScriptDom;
+﻿// The `DataSourceProvider` class implements the `IRVDataSourceProvider` interface 
+// to configure and validate data source connections and custom queries for Reveal BI 
+// based on user context. It provides essential setup for database connections, 
+// custom query construction, and security validation, specifically for SQL Server 
+// data sources in this example.
+//
+// Purpose:
+// The main purpose of `DataSourceProvider` is to dynamically set connection properties 
+// (like host and database) and customize SQL queries or stored procedures based on 
+// incoming requests, such as table requests from the client side. This is essential 
+// for scenarios that involve dynamic data sources, multi-tenancy, or secure, 
+// role-based access to data.
+//
+// Provider Setup:
+// This provider must be registered in the DI container in `Program.cs` with the 
+// following call: `.AddDataSourceProvider<DataSourceProvider>()`. Without this 
+// registration, Reveal BI will not use this custom data source configuration.
+//
+// Key Methods:
+// - `ChangeDataSourceAsync(IRVUserContext userContext, RVDashboardDataSource dataSource)`:
+//   This asynchronous method configures data source connection properties (e.g., 
+//   setting the SQL Server host and database) based on user context and data source type.
+//
+// - `ChangeDataSourceItemAsync(IRVUserContext userContext, string dashboardId, RVDataSourceItem dataSourceItem)`:
+//   This method sets or modifies SQL queries based on the data source item requested 
+//   by the client. It includes support for specific procedures (e.g., `CustOrderHist`), 
+//   ad-hoc queries (e.g., `CustomerOrders`), and role-based access. It validates 
+//   parameters and query format to prevent SQL injection and unauthorized access.
+//   - `allowedTables`: A list of table names allowed for access based on the user’s role 
+//     or requested data, restricted to those containing `CustomerID`.
+//   - `isAdmin`: Allows unrestricted access for users with an "Admin" role.
+//
+// Validation and Security Helpers:
+// - These are 100% custom to this example, they are not part of the Reveal SDK
+// - `IsValidCustomerId` and `IsValidOrderId`: Regular expressions validate that customer 
+//   and order IDs are well-formed to prevent SQL injection attacks and enforce 
+//   proper data formats.
+// - `EscapeSqlInput`: Sanitizes SQL inputs by escaping single quotes in dynamic queries 
+//   to prevent SQL injection.
+// - `IsSelectOnly`: A helper function that parses SQL using `TSql150Parser` and 
+//   `ReadOnlySelectVisitor` to ensure only read-only `SELECT` statements are allowed, 
+//   helping prevent malicious SQL statements in custom queries.
+//
+// Usage Notes:
+// - Sensitive data, such as credentials and server details, should be retrieved from 
+//   secure configurations (e.g., `IConfiguration` and app secrets). In production, 
+//   queries should be strictly validated to avoid any security vulnerabilities.
+//
+// Reference Links:
+// - Reveal BI Data Sources Documentation: https://help.revealbi.io/web/datasources/
+// - Reveal BI MS SQL Server Data Source Documentation: https://help.revealbi.io/web/adding-data-sources/ms-sql-server/
+// - App Secrets Management in .NET: https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-8.0&tabs=windows
+
+
+using Microsoft.SqlServer.TransactSql.ScriptDom;
 using Reveal.Sdk;
 using Reveal.Sdk.Data;
 using Reveal.Sdk.Data.Microsoft.SqlServer;
@@ -6,19 +60,6 @@ using System.Text.RegularExpressions;
 
 namespace RevealSdk.Server.Reveal
 {
-    // ****
-    // https://help.revealbi.io/web/datasources/
-    // https://help.revealbi.io/web/adding-data-sources/ms-sql-server/        
-    // The DataSource Provider is required.  
-    // Set you connection details in the ChangeDataSource, like Host & Database.  
-    // If you are using data source items on the client, or you need to set specific queries based 
-    // on incoming table requests, you will handle those requests in the ChangeDataSourceItem.
-    // ****
-
-
-    // ****
-    // NOTE:  This must beset in the Builder in Program.cs --> .AddDataSourceProvider<DataSourceProvider>()
-    // ****
     internal class DataSourceProvider : IRVDataSourceProvider
     {
 
