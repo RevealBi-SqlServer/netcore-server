@@ -86,8 +86,6 @@ namespace RevealSdk.Server.Reveal
             // you can also check the incoming dataSource type or id to set connection properties
             // *****
 
-
-
             if (dataSource is RVSqlServerDataSource SqlDs)
             {
                 SqlDs.Host = _config["SqlServer:Host"];
@@ -101,6 +99,12 @@ namespace RevealSdk.Server.Reveal
             // ****
             // Every request for data passes thru changeDataSourceItem
             // You can set query properties based on the incoming requests
+            // for example, you can check:
+            // - dsi.id
+            // - dsi.table
+            // - dsi.procedure
+            // - dsi.title
+            // and take a specific action on the dsi as this request is processed
             // ****
 
             if (dataSourceItem is not RVSqlServerDataSourceItem sqlDsi) return Task.FromResult(dataSourceItem);

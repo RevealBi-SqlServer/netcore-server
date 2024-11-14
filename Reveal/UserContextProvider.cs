@@ -67,14 +67,9 @@ namespace RevealSdk.Server.Reveal
 
 
             // ****
-            // Set up Roles based on the incoming user id.  In a real app, this would be set up to match
-            // your scenario and be dynamically loaded
+            // Set up Roles based on the incoming user id.  
             // ****
-            string role = "User";
-            if (userId == "AROUT" || userId == "BLONP")
-            {
-                role = "Admin";
-            }
+            string role = CheckRole(userId);
 
             // ****
             // Create an array of properties that can be used in other Reveal functions
@@ -83,9 +78,18 @@ namespace RevealSdk.Server.Reveal
                     { "OrderId", orderId },
                     { "Role", role } };
 
-            Console.WriteLine("UserContextProvider: " + userId + " " + orderId);
-
             return new RVUserContext(userId, props);
+        }
+
+
+        private string CheckRole(string userId)
+        {
+            // In a real scenario, you might query a database or call an external service here
+            if (userId == "AROUT" || userId == "BLONP")
+            {
+                return "Admin";
+            }
+            return "User";
         }
 
         private static bool IsValidCustomerId(string customerId) => Regex.IsMatch(customerId, @"^[A-Za-z0-9]{5}$");
