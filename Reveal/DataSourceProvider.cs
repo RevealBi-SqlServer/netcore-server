@@ -1,10 +1,5 @@
-﻿// The `DataSourceProvider` class implements the `IRVDataSourceProvider` interface 
-// to configure and validate data source connections and custom queries for Reveal BI 
-// based on user context. It provides essential setup for database connections, 
-// custom query construction, and security validation, specifically for SQL Server 
-// data sources in this example.
-//
 // Purpose:
+﻿// The `DataSourceProvider` class implements the `IRVDataSourceProvider` interface 
 // The main purpose of `DataSourceProvider` is to dynamically set connection properties 
 // (like host and database) and customize SQL queries or stored procedures based on 
 // incoming requests, such as table requests from the client side. This is essential 
